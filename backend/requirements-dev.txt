@@ -1,0 +1,6 @@
+# Minimal set for running the test suite (no ML models, no API keys needed).
+fastapi==0.115.6
+python-multipart==0.0.20
+python-dotenv==1.0.1
+httpx==0.28.1
+pypdf==5.1.0

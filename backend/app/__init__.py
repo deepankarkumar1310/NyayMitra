@@ -1,0 +1,1 @@
+"""NyayMitra backend package."""
