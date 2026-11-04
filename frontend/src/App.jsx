@@ -1,6 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { ask, getCase, listCases, transcribe } from "./api.js";
-import { HELPLINES, STRINGS } from "./i18n.js";
+import Admin from "./Admin.jsx";
+import { HELPLINES, LANGUAGES, STRINGS } from "./i18n.js";
+
+function readPref(key, fallback) {
+  try {
+    return localStorage.getItem(key) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writePref(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable (private mode) - ignore */
+  }
+}
+
+function useHashRoute() {
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return hash;
+}
 
 function useRecorder({ onAudio, onError }) {
   const [recording, setRecording] = useState(false);
@@ -34,7 +61,15 @@ function useRecorder({ onAudio, onError }) {
 }
 
 export default function App() {
-  const [language, setLanguage] = useState(() => localStorage.getItem("nm-lang") || "hi");
+  const route = useHashRoute();
+  return route.startsWith("#/admin") ? <Admin /> : <WorkerApp />;
+}
+
+function WorkerApp() {
+  const [language, setLanguage] = useState(() => {
+    const saved = readPref("nm-lang", "hi");
+    return STRINGS[saved] ? saved : "hi";
+  });
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null); // "transcribing" | "thinking" | null
@@ -45,9 +80,9 @@ export default function App() {
   const t = STRINGS[language];
 
   useEffect(() => {
-    localStorage.setItem("nm-lang", language);
+    writePref("nm-lang", language);
     document.documentElement.lang = language;
-    document.title = language === "hi" ? "न्याय मित्र · NyayMitra" : "NyayMitra";
+    document.title = language === "en" ? "NyayMitra" : `${STRINGS[language].title} · NyayMitra`;
   }, [language]);
 
   useEffect(() => {
@@ -98,7 +133,7 @@ export default function App() {
       const c = await getCase(id);
       setAnswer({ id: c.id, question: c.question, ...c.answer });
       setText(c.question);
-      setLanguage(c.language);
+      if (STRINGS[c.language]) setLanguage(c.language);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       showError(err);
@@ -114,18 +149,16 @@ export default function App() {
           <h1>⚖️ {t.title}</h1>
           <p className="tagline">{t.tagline}</p>
         </div>
-        <div className="lang" role="group" aria-label="Language">
-          {["hi", "en"].map((l) => (
-            <button
-              key={l}
-              type="button"
-              className={language === l ? "active" : ""}
-              onClick={() => setLanguage(l)}
-            >
-              {l === "hi" ? "हिंदी" : "English"}
-            </button>
-          ))}
-        </div>
+        <label className="lang-select">
+          <span aria-hidden="true">🌐</span>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)} aria-label="Language / भाषा">
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
 
       <main className="layout">
@@ -188,12 +221,14 @@ export default function App() {
             <div className="chips">
               {HELPLINES.map((h) => (
                 <a key={h.number} className="chip" href={`tel:${h.number}`}>
-                  📞 {h.label[language]} <strong>{h.number}</strong>
+                  📞 {t.hl[h.key]} <strong>{h.number}</strong>
                 </a>
               ))}
             </div>
           </div>
-          <p className="disclaimer">{t.disclaimer}</p>
+          <p className="disclaimer">
+            {t.disclaimer} · <a href="#/admin">Dashboard</a>
+          </p>
         </section>
 
         <aside className="card history">

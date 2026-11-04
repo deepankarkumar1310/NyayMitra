@@ -34,3 +34,12 @@ export function ask({ text, language, file }) {
 
 export const listCases = () => request("/api/cases");
 export const getCase = (id) => request(`/api/cases/${id}`);
+
+// --- Admin -------------------------------------------------------------
+const adminHeaders = (token) => (token ? { "X-Admin-Token": token } : {});
+
+export const adminStats = (token, days = 14) =>
+  request(`/api/admin/stats?days=${days}`, { headers: adminHeaders(token) });
+export const adminCases = (token) => request("/api/admin/cases?limit=200", { headers: adminHeaders(token) });
+export const adminDeleteCase = (token, id) =>
+  request(`/api/admin/cases/${id}`, { method: "DELETE", headers: adminHeaders(token) });

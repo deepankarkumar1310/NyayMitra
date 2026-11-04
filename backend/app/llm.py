@@ -23,14 +23,39 @@ FALLBACK_STEPS = {
         "File a complaint on the SAMADHAN portal (samadhan.labour.gov.in).",
         "Keep your wage slips, attendance and bank records safe.",
     ],
+    "bn": [
+        "বিনামূল্যে e-Shram হেল্পলাইন 14434-এ ফোন করুন।",
+        "SAMADHAN পোর্টালে (samadhan.labour.gov.in) অভিযোগ জানান।",
+        "আপনার বেতনের স্লিপ, হাজিরা ও ব্যাংকের রেকর্ড সাবধানে রাখুন।",
+    ],
+    "ta": [
+        "இலவச e-Shram உதவி எண் 14434-ஐ அழைக்கவும்.",
+        "SAMADHAN இணையதளத்தில் (samadhan.labour.gov.in) புகார் அளிக்கவும்.",
+        "உங்கள் சம்பளச் சீட்டு, வருகைப் பதிவு, வங்கிப் பதிவுகளைப் பத்திரமாக வைத்திருங்கள்.",
+    ],
+    "te": [
+        "ఉచిత e-Shram హెల్ప్‌లైన్ 14434కు కాల్ చేయండి.",
+        "SAMADHAN పోర్టల్‌లో (samadhan.labour.gov.in) ఫిర్యాదు చేయండి.",
+        "మీ జీతం స్లిప్పులు, హాజరు, బ్యాంక్ రికార్డులను జాగ్రత్తగా ఉంచుకోండి.",
+    ],
+    "mr": [
+        "मोफत e-Shram हेल्पलाइन 14434 वर कॉल करा.",
+        "SAMADHAN पोर्टलवर (samadhan.labour.gov.in) तक्रार नोंदवा.",
+        "तुमच्या पगार स्लिप, हजेरी आणि बँक नोंदी जपून ठेवा.",
+    ],
 }
 FALLBACK_SUMMARY = {
     "hi": "हमें इस समस्या के बारे में पक्की जानकारी नहीं मिली।",
     "en": "We could not find verified information for this problem.",
+    "bn": "এই সমস্যার বিষয়ে আমরা নিশ্চিত তথ্য পাইনি।",
+    "ta": "இந்தப் பிரச்சினை பற்றி உறுதியான தகவல் கிடைக்கவில்லை.",
+    "te": "ఈ సమస్య గురించి ధృవీకరించిన సమాచారం దొరకలేదు.",
+    "mr": "या समस्येबद्दल खात्रीशीर माहिती मिळाली नाही.",
 }
 
 
 def fallback_answer(language: str) -> dict:
+    language = language if language in FALLBACK_SUMMARY else "en"
     return {
         "summary": FALLBACK_SUMMARY[language],
         "crisis_type": "other",
@@ -101,7 +126,7 @@ def sanitize_answer(raw: dict, language: str, chunks: list[dict]) -> dict:
     if not answer["steps"]:
         return fallback_answer(language)
     if not answer["summary"]:
-        answer["summary"] = FALLBACK_SUMMARY[language]
+        answer["summary"] = FALLBACK_SUMMARY.get(language, FALLBACK_SUMMARY["en"])
     return answer
 
 

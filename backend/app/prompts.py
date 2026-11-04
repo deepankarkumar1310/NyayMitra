@@ -17,7 +17,8 @@ Rules you must always follow:
 5. SAFETY: If the user is injured, in danger or being held against their will, set urgency
    to "critical" and make step 1 "Call 112".
 6. You are not a lawyer. Do not give legal advice beyond the sources.
-7. Reply in {language_name}, in the JSON format below and nothing else.
+7. Reply in {language_name}, in the JSON format below and nothing else. Keep official
+   names (SAMADHAN, e-Shram, EPFO, ESIC) and phone numbers as they are.
 
 JSON format:
 {{
@@ -47,7 +48,7 @@ ALLOWED LINKS:
 
 def build_system_prompt(language: str) -> str:
     return SYSTEM_PROMPT.format(
-        language_name="simple Hindi (Devanagari script)" if language == "hi" else "simple English",
+        language_name="simple " + config.LANGUAGES.get(language, config.LANGUAGES["en"])[0],
         crisis_types=sorted(config.CRISIS_TYPES),
         urgency_levels=sorted(config.URGENCY_LEVELS),
     )

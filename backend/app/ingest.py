@@ -24,7 +24,9 @@ def main() -> None:
         for i, chunk in enumerate(chunk_text(body)):
             ids.append(f"{path.stem}-{i}")
             docs.append(f"{meta['title']}\n\n{chunk}")
-            metas.append({"title": meta["title"], "source": meta["source"], "url": meta["url"]})
+            metas.append(
+                {"doc": path.stem, "title": meta["title"], "source": meta["source"], "url": meta["url"]}
+            )
 
     collection.add(ids=ids, documents=docs, metadatas=metas)
     print(f"Indexed {len(docs)} chunks from {len(files)} files into {config.CHROMA_DIR}")

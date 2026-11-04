@@ -8,10 +8,12 @@ Pipeline for /api/ask:
       -> save case in SQLite
 """
 
+import hmac
 import logging
+import time
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config, db
@@ -34,13 +36,19 @@ app = FastAPI(title="NyayMitra API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=config.CORS_ORIGINS,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["*"],
 )
 
 
 def _language(value: str) -> str:
-    return value if value in config.LANGUAGES else "hi"
+    return value if value in config.LANGUAGES else config.DEFAULT_LANGUAGE
+
+
+def require_admin(x_admin_token: str = Header("")) -> None:
+    """If ADMIN_TOKEN is configured, admin routes need a matching X-Admin-Token header."""
+    if config.ADMIN_TOKEN and not hmac.compare_digest(x_admin_token, config.ADMIN_TOKEN):
+        raise HTTPException(401, "Admin token required.")
 
 
 @app.get("/api/health")
@@ -50,6 +58,15 @@ def health() -> dict:
         "app": "nyaymitra",
         "groq_key": bool(config.GROQ_API_KEY),
         "gemini_key": bool(config.GEMINI_API_KEY),
+    }
+
+
+@app.get("/api/meta")
+def meta() -> dict:
+    return {
+        "languages": [{"code": c, "name": n[1]} for c, n in config.LANGUAGES.items()],
+        "helplines": [{"name": k, "number": v} for k, v in config.HELPLINES.items()],
+        "admin_protected": bool(config.ADMIN_TOKEN),
     }
 
 
@@ -72,6 +89,7 @@ async def ask(
     language: str = Form("hi"),
     file: UploadFile | None = File(None),
 ) -> dict:
+    started = time.perf_counter()
     language = _language(language)
     question = text.strip()[: config.MAX_QUESTION_CHARS]
 
@@ -97,8 +115,9 @@ async def ask(
     except GuidanceError as exc:
         raise HTTPException(502, str(exc))
 
-    case_id = db.save_case(language, question, document.name if document else None, answer)
-    return {"id": case_id, "language": language, "question": question, **answer}
+    latency_ms = round((time.perf_counter() - started) * 1000)
+    case_id = db.save_case(language, question, document.name if document else None, answer, latency_ms)
+    return {"id": case_id, "language": language, "question": question, "latency_ms": latency_ms, **answer}
 
 
 @app.get("/api/cases")
@@ -112,3 +131,23 @@ def case_detail(case_id: int) -> dict:
     if case is None:
         raise HTTPException(404, "Case not found.")
     return case
+
+
+# --- Admin ---------------------------------------------------------------
+
+
+@app.get("/api/admin/stats", dependencies=[Depends(require_admin)])
+def admin_stats(days: int = 14) -> dict:
+    return db.stats(max(1, min(days, 90)))
+
+
+@app.get("/api/admin/cases", dependencies=[Depends(require_admin)])
+def admin_cases(limit: int = 100) -> list[dict]:
+    return db.list_cases(max(1, min(limit, 500)))
+
+
+@app.delete("/api/admin/cases/{case_id}", dependencies=[Depends(require_admin)])
+def admin_delete_case(case_id: int) -> dict:
+    if not db.delete_case(case_id):
+        raise HTTPException(404, "Case not found.")
+    return {"deleted": case_id}

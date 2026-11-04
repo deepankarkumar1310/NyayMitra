@@ -78,6 +78,7 @@ def retrieve(query: str, k: int = config.TOP_K) -> list[dict]:
         chunks.append(
             {
                 "text": text,
+                "doc": meta.get("doc", ""),
                 "title": meta.get("title", ""),
                 "source": meta.get("source", ""),
                 "url": meta.get("url", ""),

@@ -52,10 +52,21 @@ AUDIO_TYPES = {
 IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 PDF_TYPE = "application/pdf"
 
-LANGUAGES = {"hi", "en"}
+# code -> (English name used in prompts, native name shown in the UI).
+# All codes are supported by Whisper for speech-to-text.
+LANGUAGES = {
+    "hi": ("Hindi (Devanagari script)", "हिंदी"),
+    "en": ("English", "English"),
+    "bn": ("Bengali (Bengali script)", "বাংলা"),
+    "ta": ("Tamil (Tamil script)", "தமிழ்"),
+    "te": ("Telugu (Telugu script)", "తెలుగు"),
+    "mr": ("Marathi (Devanagari script)", "मराठी"),
+}
+DEFAULT_LANGUAGE = "hi"
 CRISIS_TYPES = {
     "unpaid_wages", "termination", "injury", "harassment",
-    "documents", "schemes", "jobs", "other",
+    "documents", "schemes", "jobs", "social_security", "safety",
+    "bonded_labour", "child_labour", "fraud", "other",
 }
 URGENCY_LEVELS = {"low", "medium", "high", "critical"}
 
@@ -67,13 +78,27 @@ TRUSTED_SOURCES = {
     "National Career Service": "https://www.ncs.gov.in/",
     "SHe-Box": "https://shebox.wcd.gov.in/",
     "Ministry of Labour & Employment": "https://labour.gov.in/",
+    "EPFO": "https://www.epfindia.gov.in/",
+    "ESIC": "https://esic.gov.in/",
+    "PENCIL portal": "https://pencil.gov.in/",
+    "Ayushman Bharat PM-JAY": "https://pmjay.gov.in/",
+    "National Food Security Portal": "https://nfsa.gov.in/",
+    "NALSA (National Legal Services Authority)": "https://nalsa.gov.in/",
+    "National Cyber Crime Reporting Portal": "https://cybercrime.gov.in/",
 }
 
 HELPLINES = {
     "e-Shram helpline": "14434",
     "Emergency (police / ambulance)": "112",
     "Women helpline": "181",
+    "Free legal aid (NALSA)": "15100",
+    "Cyber fraud": "1930",
+    "Child helpline": "1098",
+    "Ayushman Bharat PM-JAY": "14555",
 }
+
+# Optional: if set, /api/admin/* requires the header `X-Admin-Token: <value>`.
+ADMIN_TOKEN = _env("ADMIN_TOKEN")
 
 CORS_ORIGINS = [
     o.strip()
